@@ -1,10 +1,13 @@
-const INITIAL_STATE = {};
+const INITIAL_STATE = {
+  dataSource: [],
+};
 
 export default (state = INITIAL_STATE, action) => {
   const newState = {...state};
 
   if (action.type === 'SUMBIT_INSPECTION') {
-    return newState;
+    newState.dataSource = action.payload;
+    return newState.dataSource;
   } else {
     return newState;
   }

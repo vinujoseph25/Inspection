@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Picker,
   TextInput,
+  TouchableOpacity,
+  Button,
 } from 'react-native';
 import RadioForm, {
   RadioButton,
@@ -16,14 +18,21 @@ import RadioForm, {
 
 import {connect} from 'react-redux';
 import styles from './_inspectionElement';
-import inspectionElementItems from '../../assets/inspectionElementsItems.json';
 import {submitInspection} from '../../actions/SubmitInspectionAction';
+
+let inspectionObject = {
+  id: '',
+  tags: [],
+  inspectionItem: '',
+  inspectionResult: '',
+  fixedOnsite: '',
+  postInspectionWorkReq: '',
+  workOrdeNo: '',
+};
 
 class InspectionElementScreen extends Component {
   constructor(props) {
     super(props);
-    // this.pickerChange = this.pickerChange.bind(this);
-    // this.onChanged = this.onChanged.bind(this);
     this.state = {
       loading: true,
       dataSource: {},
@@ -39,25 +48,48 @@ class InspectionElementScreen extends Component {
     fetch('http://www.mocky.io/v2/5b97533d30000070000bd533')
       .then(response => response.json())
       .then(responseJson => {
+        let tempArray = [];
+        responseJson.data.forEach(element => {
+          let clonedObj = {...inspectionObject};
+          clonedObj.id = element.id;
+          clonedObj.inspectionItem = element.name;
+          clonedObj.tags = element.tags;
+          tempArray.push(clonedObj);
+        });
         this.setState({
           loading: false,
-          dataSource: responseJson,
+          dataSource: tempArray,
         });
       })
       .catch(error => console.log(error)); //to catch the errors if any
   }
 
-  pickerChange(value, index) {
+  onPickerChange(value, index) {
+    let clonedataSource = [...this.state.dataSource];
+    clonedataSource[index].inspectionResult = value;
     this.setState({
-      language: value,
+      dataSource: clonedataSource,
     });
-    console.log('Value');
   }
 
-  onChanged(text) {
-    // this.setState({
-    //   myNumber: text,
-    // });
+  onRadioButtonChange(value, index, pos) {
+    let clonedataSource = [...this.state.dataSource];
+    if (pos === 1) {
+      clonedataSource[index].fixedOnsite = value;
+    } else if (pos === 2) {
+      clonedataSource[index].postInspectionWorkReq = value;
+    }
+    this.setState({
+      dataSource: clonedataSource,
+    });
+  }
+
+  onTextChange(value, index) {
+    let clonedataSource = [...this.state.dataSource];
+    clonedataSource[index].workOrdeNo = value;
+    this.setState({
+      dataSource: clonedataSource,
+    });
   }
 
   renderItem = data => {
@@ -65,30 +97,21 @@ class InspectionElementScreen extends Component {
       <View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <Text style={styles.headingText}>INSPECTION ITEM : </Text>
-          <Text style={styles.text}>{data.item.name}</Text>
+          <Text style={styles.text}>{data.item.inspectionItem}</Text>
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <Text style={styles.headingText}>INSPECTION RESULT : </Text>
-          {/* <Picker
-            selectedValue={this.state.language}
+          <Picker
+            selectedValue={data.item.inspectionResult}
             style={{height: 50, width: 200}}
-            onValueChange={(itemValue, itemIndex) =>
-              this.pickerChange(itemValue, itemIndex)
+            onValueChange={itemValue =>
+              this.onPickerChange(itemValue, data.index)
             }>
             {data.item.tags.map(element => {
               return (
                 <Picker.Item key={element} label={element} value={element} />
               );
             })}
-          </Picker> */}
-          <Picker
-            selectedValue={this.state.language}
-            style={{height: 50, width: 200}}
-            onValueChange={(itemValue, itemIndex) =>
-              this.setState({language: itemValue})
-            }>
-            <Picker.Item label="Java" value="java" />
-            <Picker.Item label="JavaScript" value="js" />
           </Picker>
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
@@ -102,10 +125,8 @@ class InspectionElementScreen extends Component {
             buttonColor={'#2196f3'}
             labelColor={'#000'}
             animation={false}
-            onPress={(value, index) => {
-              this.setState({
-                toggleValue: value,
-              });
+            onPress={value => {
+              this.onRadioButtonChange(value, data.index, 1);
             }}
           />
         </View>
@@ -120,10 +141,8 @@ class InspectionElementScreen extends Component {
             buttonColor={'#2196f3'}
             labelColor={'#000'}
             animation={false}
-            onPress={(value, index) => {
-              this.setState({
-                toggleValue: value,
-              });
+            onPress={value => {
+              this.onRadioButtonChange(value, data.index, 2);
             }}
           />
         </View>
@@ -131,8 +150,8 @@ class InspectionElementScreen extends Component {
           <Text style={styles.headingText}>WORK ORDER NO. : </Text>
           <TextInput
             style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-            onChangeText={text => this.setState({text})}
-            value={this.state.text}
+            onChangeText={text => this.onTextChange(text, data.index)}
+            value={data.item.workOrdeNo}
           />
         </View>
         <View style={styles.separator} />
@@ -149,92 +168,29 @@ class InspectionElementScreen extends Component {
       );
     }
     return (
-      <View style={{flex: 1}}>
+      <View
+        style={{flex: 1, paddingTop: 10, paddingLeft: 10, paddingRight: 10}}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View>
+          <View style={styles.promobuttonouter1}>
             <FlatList
-              data={inspectionElementItems.data}
+              data={this.state.dataSource}
+              extraData={this.state}
               keyExtractor={item => item.id.toString()}
-              renderItem={item => (
-                <View>
-                  <View style={{flex: 1, flexDirection: 'row'}}>
-                    <Text style={styles.headingText}>INSPECTION ITEM : </Text>
-                    <Text style={styles.text}>{item.name}</Text>
-                  </View>
-                  <View style={{flex: 1, flexDirection: 'row'}}>
-                    <Text style={styles.headingText}>INSPECTION RESULT : </Text>
-                    {/* <Picker
-            selectedValue={this.state.language}
-            style={{height: 50, width: 200}}
-            onValueChange={(itemValue, itemIndex) =>
-              this.pickerChange(itemValue, itemIndex)
-            }>
-            {data.item.tags.map(element => {
-              return (
-                <Picker.Item key={element} label={element} value={element} />
-              );
-            })}
-          </Picker> */}
-                    <Picker
-                      selectedValue={this.state.language}
-                      style={{height: 50, width: 200}}
-                      onValueChange={(itemValue, itemIndex) =>
-                        this.setState({language: itemValue})
-                      }>
-                      <Picker.Item label="Java" value="java" />
-                      <Picker.Item label="JavaScript" value="js" />
-                    </Picker>
-                  </View>
-                  <View style={{flex: 1, flexDirection: 'row'}}>
-                    <Text style={styles.headingText}>FIXED ONSITE : </Text>
-                    <RadioForm
-                      ref="radioForm"
-                      radio_props={this.state.toggleTypes}
-                      initial={'No'}
-                      formHorizontal={true}
-                      labelHorizontal={true}
-                      buttonColor={'#2196f3'}
-                      labelColor={'#000'}
-                      animation={false}
-                      onPress={(value, index) => {
-                        this.setState({
-                          toggleValue: value,
-                        });
-                      }}
-                    />
-                  </View>
-                  <View style={{flex: 1, flexDirection: 'row'}}>
-                    <Text style={styles.headingText}>
-                      POST INSP. WORK REQ :{' '}
-                    </Text>
-                    <RadioForm
-                      ref="radioForm"
-                      radio_props={this.state.toggleTypes}
-                      initial={'No'}
-                      formHorizontal={true}
-                      labelHorizontal={true}
-                      buttonColor={'#2196f3'}
-                      labelColor={'#000'}
-                      animation={false}
-                      onPress={(value, index) => {
-                        this.setState({
-                          toggleValue: value,
-                        });
-                      }}
-                    />
-                  </View>
-                  <View style={{flex: 1, flexDirection: 'row'}}>
-                    <Text style={styles.headingText}>WORK ORDER NO. : </Text>
-                    <TextInput
-                      style={{height: 40, borderColor: 'gray', borderWidth: 1}}
-                      onChangeText={text => this.setState({text})}
-                      value={this.state.text}
-                    />
-                  </View>
-                  <View style={styles.separator} />
-                </View>
-              )}
+              renderItem={item => this.renderItem(item)}
             />
+            <TouchableOpacity
+              onPress={() => {
+                this.props.onSubmitInspection(this.state.dataSource);
+              }}>
+              <View style={styles.promobuttonouter2}>
+                <Text style={styles.promobutton}>Update</Text>
+              </View>
+            </TouchableOpacity>
+            {/* <Button
+              onPress={this.props.onSubmitInspection(this.state.dataSource)}
+              title="Next"
+              color="#841584"
+            /> */}
           </View>
         </ScrollView>
       </View>
@@ -242,10 +198,19 @@ class InspectionElementScreen extends Component {
   }
 }
 
+const mapStateToProps = state => {
+  return {
+    inspectionSubmitted: state.inspectionSubmitted,
+  };
+};
+
 const mapDispatchToProps = dispatch => {
   return {
     onSubmitInspection: value => dispatch(submitInspection(value)),
   };
 };
 
-export default connect(mapDispatchToProps)(InspectionElementScreen);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(InspectionElementScreen);

@@ -32,10 +32,17 @@ export default (styles = StyleSheet.create({
     color: '#606070',
     padding: 10,
   },
+  error: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff0000',
+    padding: 10,
+  },
   text: {
     fontSize: 16,
     color: '#606070',
     padding: 10,
+    marginLeft: 'auto',
   },
   content: {
     // paddingBosubcategoryom: 10,
@@ -56,7 +63,10 @@ export default (styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#00AADD',
-    borderRadius: 2,
+    borderRadius: 20,
+    width: 100,
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   promobutton: {
     fontSize: 15,

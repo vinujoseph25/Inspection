@@ -8,7 +8,7 @@ import {
   Picker,
   TextInput,
   TouchableOpacity,
-  Button,
+  Alert,
 } from 'react-native';
 import RadioForm, {
   RadioButton,
@@ -30,16 +30,14 @@ let inspectionObject = {
   workOrdeNo: '',
 };
 
+let untouchedFlag = true;
+
 class InspectionElementScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
       loading: true,
       dataSource: {},
-      language: '',
-      toggleValue: '',
-      myNumber: '',
-      text: 'Useless Placeholder',
       toggleTypes: [{label: 'Yes', value: 'Yes'}, {label: 'No', value: 'No'}],
     };
   }
@@ -64,32 +62,100 @@ class InspectionElementScreen extends Component {
       .catch(error => console.log(error)); //to catch the errors if any
   }
 
+  checkAllDataEntry(index) {
+    if (index === 0) {
+      untouchedFlag = false;
+      return true;
+    } else {
+      const element = this.state.dataSource[index - 1];
+      if (
+        element.inspectionResult !== '' &&
+        element.fixedOnsite !== '' &&
+        element.postInspectionWorkReq !== '' &&
+        element.workOrdeNo !== ''
+      ) {
+        untouchedFlag = false;
+        return true;
+      } else {
+        for (; index < this.state.dataSource.length; index++) {
+          let delElement = this.state.dataSource[index];
+          delElement.inspectionResult = '';
+          delElement.fixedOnsite = '';
+          delElement.postInspectionWorkReq = '';
+          delElement.workOrdeNo = '';
+        }
+        this.setState();
+        return false;
+      }
+    }
+  }
+
   onPickerChange(value, index) {
-    let clonedataSource = [...this.state.dataSource];
-    clonedataSource[index].inspectionResult = value;
-    this.setState({
-      dataSource: clonedataSource,
-    });
+    let checkValue = this.checkAllDataEntry(index);
+    if (!checkValue) {
+      Alert.alert('Please fill above datas');
+      return;
+    } else {
+      if (value !== 0) {
+        let clonedataSource = [...this.state.dataSource];
+        clonedataSource[index].inspectionResult = value;
+        this.setState({
+          dataSource: clonedataSource,
+        });
+      }
+    }
   }
 
   onRadioButtonChange(value, index, pos) {
-    let clonedataSource = [...this.state.dataSource];
-    if (pos === 1) {
-      clonedataSource[index].fixedOnsite = value;
-    } else if (pos === 2) {
-      clonedataSource[index].postInspectionWorkReq = value;
+    let checkValue = this.checkAllDataEntry(index);
+    if (!checkValue) {
+      Alert.alert('Please fill above datas');
+      return;
+    } else {
+      let clonedataSource = [...this.state.dataSource];
+      if (pos === 1) {
+        clonedataSource[index].fixedOnsite = value;
+      } else if (pos === 2) {
+        clonedataSource[index].postInspectionWorkReq = value;
+      }
+      this.setState({
+        dataSource: clonedataSource,
+      });
     }
-    this.setState({
-      dataSource: clonedataSource,
-    });
   }
 
   onTextChange(value, index) {
-    let clonedataSource = [...this.state.dataSource];
-    clonedataSource[index].workOrdeNo = value;
-    this.setState({
-      dataSource: clonedataSource,
-    });
+    let checkValue = this.checkAllDataEntry(index);
+    if (!checkValue) {
+      Alert.alert('Please fill above datas');
+      return;
+    } else {
+      let clonedataSource = [...this.state.dataSource];
+      clonedataSource[index].workOrdeNo = value;
+      this.setState({
+        dataSource: clonedataSource,
+      });
+    }
+  }
+
+  textCheck(index) {
+    let checkValue = this.checkAllDataEntry(index);
+    if (!checkValue) {
+      Alert.alert('Please fill above datas');
+      return;
+    } else {
+      if (this.state.dataSource[index].inspectionResult === '') {
+        Alert.alert('Please select value for Inspection result');
+      }
+    }
+  }
+
+  onSubmit() {
+    if (untouchedFlag) {
+      Alert.alert('Please fill above datas');
+    } else {
+      this.props.onSubmitInspection(this.state.dataSource);
+    }
   }
 
   renderItem = data => {
@@ -103,10 +169,11 @@ class InspectionElementScreen extends Component {
           <Text style={styles.headingText}>INSPECTION RESULT : </Text>
           <Picker
             selectedValue={data.item.inspectionResult}
-            style={{height: 50, width: 200}}
+            style={{height: 40, width: 150, marginLeft: 'auto'}}
             onValueChange={itemValue =>
               this.onPickerChange(itemValue, data.index)
             }>
+            <Picker.Item key={'unselectable'} label={''} value={0} />
             {data.item.tags.map(element => {
               return (
                 <Picker.Item key={element} label={element} value={element} />
@@ -116,44 +183,73 @@ class InspectionElementScreen extends Component {
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <Text style={styles.headingText}>FIXED ONSITE : </Text>
-          <RadioForm
-            ref="radioForm"
-            radio_props={this.state.toggleTypes}
-            initial={'No'}
-            formHorizontal={true}
-            labelHorizontal={true}
-            buttonColor={'#2196f3'}
-            labelColor={'#000'}
-            animation={false}
-            onPress={value => {
-              this.onRadioButtonChange(value, data.index, 1);
-            }}
-          />
+          <View style={{marginLeft: 'auto'}}>
+            <TouchableOpacity onPress={() => this.textCheck(data.index)}>
+              <View>
+                <RadioForm
+                  ref="radioForm"
+                  radio_props={this.state.toggleTypes}
+                  initial={'No'}
+                  formHorizontal={true}
+                  labelHorizontal={true}
+                  buttonColor={'#2196f3'}
+                  labelColor={'#000'}
+                  animation={false}
+                  disabled={
+                    this.state.dataSource[data.index].inspectionResult
+                      ? false
+                      : true
+                  }
+                  onPress={value => {
+                    this.onRadioButtonChange(value, data.index, 1);
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <Text style={styles.headingText}>POST INSP. WORK REQ : </Text>
-          <RadioForm
-            ref="radioForm"
-            radio_props={this.state.toggleTypes}
-            initial={'No'}
-            formHorizontal={true}
-            labelHorizontal={true}
-            buttonColor={'#2196f3'}
-            labelColor={'#000'}
-            animation={false}
-            onPress={value => {
-              this.onRadioButtonChange(value, data.index, 2);
-            }}
-          />
+          <View style={{marginLeft: 'auto'}}>
+            <TouchableOpacity onPress={() => this.textCheck(data.index)}>
+              <View>
+                <RadioForm
+                  ref="radioForm"
+                  radio_props={this.state.toggleTypes}
+                  initial={'No'}
+                  formHorizontal={true}
+                  labelHorizontal={true}
+                  buttonColor={'#2196f3'}
+                  labelColor={'#000'}
+                  animation={false}
+                  disabled={
+                    this.state.dataSource[data.index].inspectionResult
+                      ? false
+                      : true
+                  }
+                  onPress={value => {
+                    this.onRadioButtonChange(value, data.index, 2);
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <Text style={styles.headingText}>WORK ORDER NO. : </Text>
           <TextInput
-            style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+            style={{
+              height: 40,
+              width: 200,
+              borderColor: 'gray',
+              borderWidth: 1,
+              marginLeft: 'auto',
+            }}
             onChangeText={text => this.onTextChange(text, data.index)}
             value={data.item.workOrdeNo}
           />
         </View>
+        <Text>{'\n'}</Text>
         <View style={styles.separator} />
       </View>
     );
@@ -178,19 +274,16 @@ class InspectionElementScreen extends Component {
               keyExtractor={item => item.id.toString()}
               renderItem={item => this.renderItem(item)}
             />
+            <Text>{'\n'}</Text>
             <TouchableOpacity
+              style={styles.promobuttonouter2}
               onPress={() => {
-                this.props.onSubmitInspection(this.state.dataSource);
+                this.onSubmit();
               }}>
               <View style={styles.promobuttonouter2}>
-                <Text style={styles.promobutton}>Update</Text>
+                <Text style={styles.promobutton}>Next</Text>
               </View>
             </TouchableOpacity>
-            {/* <Button
-              onPress={this.props.onSubmitInspection(this.state.dataSource)}
-              title="Next"
-              color="#841584"
-            /> */}
           </View>
         </ScrollView>
       </View>
